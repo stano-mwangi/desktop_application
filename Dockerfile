@@ -43,7 +43,7 @@ RUN chown -R www-data:www-data /var/www \
     && chmod -R 755 /var/www/storage /var/www/bootstrap/cache
 
 # Copy Nginx configuration
-COPY desktop_application/blob/master/nginx.conf /etc/nginx/sites-available/default
+COPY ./nginx.conf /etc/nginx/sites-available/default
 
 # Configure environment
 RUN if [ ! -f .env ]; then cp .env.example .env; fi \
