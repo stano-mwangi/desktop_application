@@ -1,0 +1,11 @@
+.git
+node_modules
+vendor
+.env
+.env.example
+tests
+storage/logs
+*.log
+Dockerfile
+nginx.conf
+database/database.sqlite
