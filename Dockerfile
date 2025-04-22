@@ -1,7 +1,7 @@
 # Use PHP 8.2 with FPM for production
 FROM php:8.2-fpm
 
-# Install system dependencies, Node.js, SQLite, and envsubst
+# Install system dependencies, Node.js, SQLite, and Caddy
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg62-turbo-dev \
@@ -10,14 +10,13 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     libzip-dev \
-    nginx \
     sqlite3 libsqlite3-dev \
-    gettext-base \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo_sqlite pdo_mysql mbstring exif pcntl bcmath gd zip xml \
     && curl -sL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs \
-    && apt-get clean && rm -rf /var/lib/apt/lists/*
+    && apt-get clean && rm -rf /var/lib/apt/lists/* \
+    && curl -sL https://caddyserver.com/api/download?os=linux | install -m 755 /dev/stdin /usr/bin/caddy
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -33,7 +32,6 @@ RUN php -d memory_limit=-1 /usr/bin/composer install --no-interaction --prefer-d
 
 # Install frontend dependencies and build assets (for Livewire)
 
-
 # Create SQLite database file
 RUN touch /var/www/database/database.sqlite \
     && chown www-data:www-data /var/www/database/database.sqlite \
@@ -43,11 +41,8 @@ RUN touch /var/www/database/database.sqlite \
 RUN chown -R www-data:www-data /var/www \
     && chmod -R 755 /var/www/storage /var/www/bootstrap/cache
 
-# Remove default Nginx configurations and copy template
-RUN rm -rf /etc/nginx/conf.d/* /etc/nginx/sites-enabled/* /etc/nginx/sites-available/* \
-    && mkdir -p /etc/nginx/sites-enabled \
-    && mkdir -p /etc/nginx/sites-available
-COPY ./nginx.conf.template /etc/nginx/sites-available/default.template
+# Copy Caddy configuration
+COPY ./Caddyfile /etc/caddy/Caddyfile
 
 # Configure environment
 RUN if [ ! -f .env ]; then cp .env.example .env; fi \
@@ -62,5 +57,5 @@ RUN if [ ! -f .env ]; then cp .env.example .env; fi \
 # Expose port (Render uses PORT env variable, default 10000)
 EXPOSE $PORT
 
-# Start PHP-FPM and Nginx with runtime config substitution
-CMD ["/bin/sh", "-c", "envsubst '$${PORT}' < /etc/nginx/sites-available/default.template > /etc/nginx/sites-enabled/default && nginx -t && php-fpm -D && nginx -g 'daemon off;'"]
+# Start PHP-FPM and Caddy
+CMD ["/bin/sh", "-c", "php-fpm -D && caddy run --config /etc/caddy/Caddyfile"]
