@@ -42,7 +42,9 @@ RUN touch /var/www/database/database.sqlite \
 RUN chown -R www-data:www-data /var/www \
     && chmod -R 755 /var/www/storage /var/www/bootstrap/cache
 
-# Copy Nginx configuration
+# Remove default Nginx configurations and copy custom config
+RUN rm -f /etc/nginx/sites-enabled/* /etc/nginx/sites-available/* \
+    && ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
 COPY ./nginx.conf /etc/nginx/sites-available/default
 
 # Configure environment
@@ -58,5 +60,5 @@ RUN if [ ! -f .env ]; then cp .env.example .env; fi \
 # Expose port (Render uses PORT env variable, default 10000)
 EXPOSE $PORT
 
-# Start PHP-FPM and Nginx
+## Start PHP-FPM and Nginx
 CMD ["sh", "-c", "php-fpm -D && nginx -g 'daemon off;'"]
