@@ -13,9 +13,10 @@ RUN apt-get update && apt-get install -y \
     sqlite3 libsqlite3-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo_sqlite pdo_mysql mbstring exif pcntl bcmath gd zip xml \
-    && curl -sL https://deb.nodesource.com/setup_18.x | bash - \
+    curl \
+    && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs \
-    && apt-get clean && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
     && curl -sL https://caddyserver.com/api/download?os=linux | install -m 755 /dev/stdin /usr/bin/caddy
 
 # Install Composer
