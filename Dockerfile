@@ -13,7 +13,6 @@ RUN apt-get update && apt-get install -y \
     sqlite3 libsqlite3-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo_sqlite pdo_mysql mbstring exif pcntl bcmath gd zip xml \
-      curl \
     && curl -fsSL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs \
     && apt-get clean && rm -rf /var/lib/apt/lists/* \
@@ -32,7 +31,7 @@ COPY . /var/www
 RUN php -d memory_limit=-1 /usr/bin/composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --verbose
 
 # Install frontend dependencies and build assets (for Livewire)
-RUN npm install && npm run build && rm -rf node_modules
+
 
 # Create SQLite database file
 RUN touch /var/www/database/database.sqlite \
