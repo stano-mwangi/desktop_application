@@ -31,7 +31,7 @@ COPY . /var/www
 RUN php -d memory_limit=-1 /usr/bin/composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --verbose
 
 # Install frontend dependencies and build assets (for Livewire)
-RUN npm install && npm run build && rm -rf node_modules
+
 
 # Create SQLite database file
 RUN touch /var/www/database/database.sqlite \
