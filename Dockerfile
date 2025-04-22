@@ -1,5 +1,5 @@
-# Use PHP 8.1 with FPM for production
-FROM php:8.1-fpm
+# Use PHP 8.2 with FPM for production
+FROM php:8.2-fpm
 
 # Install system dependencies and Node.js for Livewire assets
 RUN apt-get update && apt-get install -y \
@@ -27,8 +27,8 @@ WORKDIR /var/www
 # Copy application code
 COPY . /var/www
 
-# Install PHP dependencies
-RUN composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev
+# Install PHP dependencies with increased memory limit
+RUN php -d memory_limit=-1 /usr/bin/composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --verbose
 
 # Install frontend dependencies and build assets (for Livewire)
 RUN npm install && npm run build && rm -rf node_modules
