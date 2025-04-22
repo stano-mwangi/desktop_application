@@ -1,7 +1,7 @@
 # Use PHP 8.2 with FPM for production
 FROM php:8.2-fpm
 
-# Install system dependencies and Node.js for Livewire assets
+# Install system dependencies, Node.js, and SQLite
 RUN apt-get update && apt-get install -y \
     libpng-dev \
     libjpeg62-turbo-dev \
@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
     nginx \
     sqlite3 libsqlite3-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo_sqlite pdo_mysql mbstring exif pcntl bcmath gd zip \
+    && docker-php-ext-install pdo_sqlite pdo_mysql mbstring exif pcntl bcmath gd zip xml \
     && curl -sL https://deb.nodesource.com/setup_18.x | bash - \
     && apt-get install -y nodejs \
     && apt-get clean && rm -rf /var/lib/apt/lists/*
@@ -27,11 +27,11 @@ WORKDIR /var/www
 # Copy application code
 COPY . /var/www
 
-# Install PHP dependencies with increased memory limit
+# Install PHP dependencies
 RUN php -d memory_limit=-1 /usr/bin/composer install --no-interaction --prefer-dist --optimize-autoloader --no-dev --verbose
 
 # Install frontend dependencies and build assets (for Livewire)
-
+RUN npm install && npm run build && rm -rf node_modules
 
 # Create SQLite database file
 RUN touch /var/www/database/database.sqlite \
@@ -42,10 +42,14 @@ RUN touch /var/www/database/database.sqlite \
 RUN chown -R www-data:www-data /var/www \
     && chmod -R 755 /var/www/storage /var/www/bootstrap/cache
 
-# Remove default Nginx configurations and copy custom config
-RUN rm -f /etc/nginx/sites-enabled/* /etc/nginx/sites-available/* \
-    && ln -s /etc/nginx/sites-available/default /etc/nginx/sites-enabled/default
-COPY ./nginx.conf /etc/nginx/sites-available/default
+# Remove all default Nginx configurations and copy custom config
+RUN rm -rf /etc/nginx/conf.d/* /etc/nginx/sites-enabled/* /etc/nginx/sites-available/* \
+    && mkdir -p /etc/nginx/sites-enabled \
+    && mkdir -p /etc/nginx/sites-available
+COPY ./nginx.conf /etc/nginx/sites-enabled/default
+
+# Validate Nginx configuration
+RUN nginx -t
 
 # Configure environment
 RUN if [ ! -f .env ]; then cp .env.example .env; fi \
@@ -60,5 +64,5 @@ RUN if [ ! -f .env ]; then cp .env.example .env; fi \
 # Expose port (Render uses PORT env variable, default 10000)
 EXPOSE $PORT
 
-## Start PHP-FPM and Nginx
+# Start PHP-FPM and Nginx
 CMD ["sh", "-c", "php-fpm -D && nginx -g 'daemon off;'"]
